@@ -96,12 +96,18 @@
             border-bottom: 1px solid #555;
             padding-bottom: 4px;
         }
+        .btn-group {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>Configuración de VLANs</h1>
-    <p>Conectate al dispositivo (GNS3 / físico / lab), definí las VLANs y aplicalas desde esta interfaz.</p>
+    <p>Conectate al dispositivo (GNS3 / físico / lab), podés leer las VLANs actuales y modificarlas desde acá.</p>
 
     <form method="post" id="vlanForm">
         <div class="section-title">Datos de conexión al dispositivo</div>
@@ -126,7 +132,8 @@
                 <td>Password</td>
                 <td>
                     <input type="password" name="password"
-                           placeholder="Password" required>
+                           placeholder="Password"
+                           value="{{ password_value or '' }}">
                 </td>
             </tr>
             <tr>
@@ -183,8 +190,11 @@
             </tbody>
         </table>
 
-        <button type="button" class="btn" onclick="addRow()">Agregar VLAN</button>
-        <button type="submit" class="btn">Aplicar en el dispositivo</button>
+        <div class="btn-group">
+            <button type="button" class="btn" onclick="addRow()">Agregar VLAN</button>
+            <button type="submit" class="btn" name="action" value="apply">Aplicar VLANs en el dispositivo</button>
+            <button type="submit" class="btn" name="action" value="fetch">Leer VLANs actuales del dispositivo</button>
+        </div>
     </form>
 
     {% if error_msg %}
@@ -205,7 +215,7 @@
 
     {% if vlans and vlans|length > 0 %}
         <div class="result">
-            <strong>Resumen de VLANs:</strong><br>
+            <strong>Resumen de VLANs actuales en el formulario:</strong><br>
             {% for vlan in vlans %}
                 VLAN {{ vlan.id }} - {{ vlan.name }}<br>
             {% endfor %}
