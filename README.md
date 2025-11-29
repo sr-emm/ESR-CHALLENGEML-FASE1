@@ -18,7 +18,7 @@ Pasos realizados:
 3. Se crea un proyecto dentro de la IA para concentrar la informacion.
 4. Se compara los frontend que mencionan en el challenge. Parece que lo mas simple seria flask por ser web
 
-========================================================================================================
+============================================================================================
 
 Manos a la obra:
 1. La IA establece instrucciones para trabajar con flask y concentrarse en un paso a la vez. 
