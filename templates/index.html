@@ -120,7 +120,7 @@
         <h1>Challenge ML</h1>
     </div>
 
-    <p>Conectate al dispositivo (GNS3 / físico / lab), leé las VLANs y el nombre del switch, modificalos y guardá la configuración.</p>
+    <p>Conectate al dispositivo (GNS3 / físico / lab), leé las VLANs y el nombre del switch, modificalos, guardá la configuración y descargá el backup.</p>
 
     <form method="post" id="vlanForm">
         <div class="section-title">Datos de conexión al dispositivo</div>
@@ -223,7 +223,10 @@
                 Leer nombre del switch
             </button>
             <button type="submit" class="btn" name="action" value="save_config">
-                Guardar configuración
+                Guardar configuración en el dispositivo
+            </button>
+            <button type="submit" class="btn" name="action" value="download_config">
+                Descargar configuración (txt)
             </button>
         </div>
     </form>

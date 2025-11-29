@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, make_response
 from netmiko import (
     ConnectHandler,
     NetmikoTimeoutException,
     NetmikoAuthenticationException,
 )
+from datetime import datetime
 import re
 
 app = Flask(__name__)
@@ -15,11 +16,8 @@ app.secret_key = "cambia-esta-clave-para-tu-lab"
 IGNORE_VLANS = {"1002", "1003", "1004", "1005"}
 
 
-def apply_config(vlans, hostname, device_ip, username, password, port, device_type="cisco_ios_telnet"):
-    """
-    Aplica configuración de VLANs y hostname en el dispositivo Cisco.
-    """
-    device = {
+def build_device(device_ip, username, password, port, device_type="cisco_ios_telnet"):
+    return {
         "device_type": device_type,  # "cisco_ios" si usás SSH
         "host": device_ip,
         "username": username,
@@ -27,6 +25,13 @@ def apply_config(vlans, hostname, device_ip, username, password, port, device_ty
         "secret": password,  # si el enable es otro, cambialo
         "port": port,
     }
+
+
+def apply_config(vlans, hostname, device_ip, username, password, port, device_type="cisco_ios_telnet"):
+    """
+    Aplica configuración de VLANs y hostname en el dispositivo Cisco.
+    """
+    device = build_device(device_ip, username, password, port, device_type)
 
     commands = []
 
@@ -73,14 +78,7 @@ def fetch_current_vlans(device_ip, username, password, port, device_type="cisco_
     """
     Ejecuta 'show vlan brief' y devuelve una lista de VLANs parseadas (sin 1002–1005).
     """
-    device = {
-        "device_type": device_type,
-        "host": device_ip,
-        "username": username,
-        "password": password,
-        "secret": password,
-        "port": port,
-    }
+    device = build_device(device_ip, username, password, port, device_type)
 
     try:
         conn = ConnectHandler(**device)
@@ -139,14 +137,7 @@ def fetch_hostname(device_ip, username, password, port, device_type="cisco_ios_t
     """
     Lee el hostname actual del dispositivo (show run | i ^hostname).
     """
-    device = {
-        "device_type": device_type,
-        "host": device_ip,
-        "username": username,
-        "password": password,
-        "secret": password,
-        "port": port,
-    }
+    device = build_device(device_ip, username, password, port, device_type)
 
     try:
         conn = ConnectHandler(**device)
@@ -187,14 +178,7 @@ def save_config_only(device_ip, username, password, port, device_type="cisco_ios
     """
     Solo ejecuta 'write memory' / 'copy run start' vía Netmiko (save_config()).
     """
-    device = {
-        "device_type": device_type,
-        "host": device_ip,
-        "username": username,
-        "password": password,
-        "secret": password,
-        "port": port,
-    }
+    device = build_device(device_ip, username, password, port, device_type)
 
     try:
         conn = ConnectHandler(**device)
@@ -207,9 +191,34 @@ def save_config_only(device_ip, username, password, port, device_type="cisco_ios
         try:
             output = conn.save_config()
         except Exception:
-            # Algunos IOS no soportan save_config directo
             output = "No se pudo ejecutar save_config automáticamente (probá manualmente 'write memory')."
 
+        conn.disconnect()
+        return True, output
+
+    except NetmikoAuthenticationException as e:
+        return False, f"Error de autenticación: {e}"
+    except NetmikoTimeoutException as e:
+        return False, f"Timeout conectando al dispositivo: {e}"
+    except Exception as e:
+        return False, f"Error inesperado: {e}"
+
+
+def fetch_full_config(device_ip, username, password, port, device_type="cisco_ios_telnet"):
+    """
+    Obtiene la running-config completa (show running-config).
+    """
+    device = build_device(device_ip, username, password, port, device_type)
+
+    try:
+        conn = ConnectHandler(**device)
+
+        try:
+            conn.enable()
+        except Exception:
+            pass
+
+        output = conn.send_command("show running-config")
         conn.disconnect()
         return True, output
 
@@ -239,7 +248,7 @@ def index():
     password_for_field = stored_password
 
     if request.method == "POST":
-        action = request.form.get("action", "apply")  # apply, fetch_vlans, fetch_hostname, save_config
+        action = request.form.get("action", "apply")  # apply, fetch_vlans, fetch_hostname, save_config, download_config
 
         # Datos de conexión
         form_ip = request.form.get("device_ip", "").strip()
@@ -258,11 +267,11 @@ def index():
             except ValueError:
                 port = 23
 
-        # hostname desde form (si escribió algo, pisa lo anterior)
+        # hostname desde form
         if form_hostname:
             hostname = form_hostname
 
-        # Password: si la escribe, actualiza; si no, uso la guardada
+        # Password: si la escribe, actualiza; si no, usamos la guardada
         if form_pass:
             password = form_pass
         else:
@@ -278,7 +287,7 @@ def index():
 
         password_for_field = password
 
-        # VLANs desde formulario (para aplicar; para fetch_vlans se sobrescriben)
+        # VLANs desde el formulario (para aplicar)
         vlan_ids = request.form.getlist("vlan_id")
         vlan_names = request.form.getlist("vlan_name")
 
@@ -296,6 +305,7 @@ def index():
             vlans.append({"id": vid, "name": vname})
 
         if not device_ip or not username or not password:
+            # Para cualquier acción necesitamos credenciales
             error_msg = "Faltan datos de conexión (IP, usuario o password)."
         else:
             if action == "fetch_vlans":
@@ -342,6 +352,27 @@ def index():
                     netmiko_output = output
                 else:
                     error_msg = output
+
+            elif action == "download_config":
+                ok, cfg_output = fetch_full_config(
+                    device_ip=device_ip,
+                    username=username,
+                    password=password,
+                    port=port,
+                    device_type="cisco_ios_telnet",
+                )
+                if not ok:
+                    error_msg = cfg_output
+                else:
+                    # Determinar hostname para el nombre del archivo
+                    hn = hostname or parse_hostname_from_output(cfg_output) or "device"
+                    now = datetime.now()
+                    filename = f"{now.year:04d}-{now.month:02d}-{now.day:02d}-{now.hour:02d}-{now.minute:02d}-{hn}.txt"
+
+                    response = make_response(cfg_output)
+                    response.headers["Content-Type"] = "text/plain"
+                    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+                    return response
 
             else:  # apply
                 if len(vlans) == 0 and not hostname:
