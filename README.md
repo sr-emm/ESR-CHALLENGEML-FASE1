@@ -39,4 +39,10 @@ Manos a la obra:
 <img width="351" height="116" alt="image" src="https://github.com/user-attachments/assets/bffee0c4-de05-4a3c-a30e-27a479c6c92b" />
 
 10. Se agregan los archivos al github para tener control de cambios. Se empieza a instalar y configurar netmiko.
-11. Se configura en GNS3 un switch IOU L2 para poder establecer las pruebas. Esto hace que deba agregar el puerto para que se conecte al telnet del equipo. 
+11. Se configura en GNS3 un switch IOU L2 para poder establecer las pruebas. Esto hace que deba agregar el puerto para que se conecte al telnet del equipo.
+<img width="1078" height="861" alt="image" src="https://github.com/user-attachments/assets/53c6f37b-8b44-4b3e-ac37-67e4da28c192" />
+<img width="969" height="879" alt="image" src="https://github.com/user-attachments/assets/0c6ca691-93e5-4533-9235-4a19fa94e5e9" />
+
+12. Se hace cambios para que pueda obtener las vlans creadas y lograr tener una clave persistente para no tener que colocarla cada vez. Esto es por el lab, en produccion se tendria que tener una mejor forma como autenticacion por certificado.
+
+13. 
