@@ -11,7 +11,17 @@ Usando un Frontend:
   - Hacer Backup de configuracion
     - El nombre debe incluir: hostname, fecha y hora del backup
   - El script debe validar la configuracion actual del equipo. Alertando en caso de que difiera la config con la implementada en el frontend o en la salida del script
-  
+
+# Realizado
+- Se crea un Frontend web que permitira sea compatible con cualquier dispositivo requerido haciendolo mas universal que uno especifico para windows por ejemplo.
+- Se le coloca los siguientes datos para acceder al equipo
+  - IP
+  - User
+  - Password
+  - Puerto
+- 
+
+
 Pasos realizados:
 1. Se hace un resumen de las actividades a realizar dividiendolas por partes y prioridad.
 2. Se usa ChatGPT como IA principal en esta fase.
@@ -45,4 +55,4 @@ Manos a la obra:
 
 12. Se hace cambios para que pueda obtener las vlans creadas y lograr tener una clave persistente para no tener que colocarla cada vez. Esto es por el lab, en produccion se tendria que tener una mejor forma como autenticacion por certificado.
 
-13. 
+13. Se agregan vlan
