@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="utf-8">
-    <title>Configuración de VLANs - Cisco</title>
+    <title>Challenge ML</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -17,9 +17,18 @@
             border-radius: 8px;
             box-shadow: 0 0 10px #000;
         }
-        h1 {
-            text-align: center;
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
             margin-bottom: 10px;
+        }
+        .header img {
+            height: 48px;
+        }
+        h1 {
+            margin: 0;
         }
         p {
             font-size: 14px;
@@ -106,7 +115,11 @@
 </head>
 <body>
 <div class="container">
-    <h1>Configuración de VLANs</h1>
+    <div class="header">
+        <img src="{{ url_for('static', filename='ml_logo.png') }}" alt="ML Logo">
+        <h1>Challenge ML</h1>
+    </div>
+
     <p>Conectate al dispositivo (GNS3 / físico / lab), leé las VLANs y el nombre del switch, modificalos y guardá la configuración.</p>
 
     <form method="post" id="vlanForm">
