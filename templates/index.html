@@ -4,10 +4,6 @@
     <meta charset="utf-8">
     <title>Challenge ML</title>
 
-    <!--
-        Estilos básicos (sin frameworks) para que el frontend se vea prolijo
-        y fácil de leer. Todo el layout es un <div class="container"> centrado.
-    -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,8 +18,6 @@
             border-radius: 8px;
             box-shadow: 0 0 10px #000;
         }
-
-        /* Cabecera: logo + título centrados */
         .header {
             display: flex;
             align-items: center;
@@ -37,13 +31,10 @@
         h1 {
             margin: 0;
         }
-
         p {
             font-size: 14px;
             color: #ccc;
         }
-
-        /* Tablas usadas para alinear etiqueta / campo */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -57,8 +48,6 @@
         th {
             background: #444;
         }
-
-        /* Inputs y selects: mismo look & feel oscuro */
         input[type="number"],
         input[type="text"],
         input[type="password"],
@@ -69,27 +58,24 @@
             background: #111;
             color: #eee;
         }
-        /* Los inputs de texto/number ocupan casi toda la celda */
         input[type="number"],
         input[type="text"],
         input[type="password"] {
             width: 95%;
         }
 
-        /* Contenedor horizontal para "Protocolo y Puerto" */
         .port-proto-wrapper {
-            display: inline-flex;    /* inline para que el <td> centrado lo alinee */
-            gap: 8px;                /* espacio entre protocolo y puerto */
+            display: inline-flex;
+            gap: 8px;
             align-items: center;
             width: 95%;
         }
         .port-proto-wrapper input[type="number"],
         .port-proto-wrapper select {
-            flex: 1 1 0;            /* repartimos el ancho 50/50 aproximadamente */
+            flex: 1 1 0;
             width: 100%;
         }
 
-        /* Botones de acción principales */
         .btn {
             margin-top: 15px;
             padding: 10px 16px;
@@ -109,8 +95,6 @@
         .btn-secondary:hover {
             background: #5a6268;
         }
-
-        /* Panel donde mostramos outputs de Netmiko / info extra */
         .result {
             margin-top: 30px;
             padding: 15px;
@@ -120,8 +104,6 @@
             font-family: "Consolas", monospace;
             font-size: 13px;
         }
-
-        /* Mensajes de error / OK arriba del output */
         .alert-error {
             background: #661515;
             color: #ffd0d0;
@@ -136,56 +118,40 @@
             border-radius: 4px;
             margin-top: 15px;
         }
-
-        /* Subtítulos de secciones (línea gris inferior) */
         .section-title {
             margin-top: 20px;
             font-weight: bold;
             border-bottom: 1px solid #555;
             padding-bottom: 4px;
         }
-
-        /* Grupos de botones alineados en fila */
         .btn-group {
             margin-top: 15px;
             display: flex;
             gap: 10px;
-            flex-wrap: wrap; /* para que no se rompa si la pantalla es estrecha */
+            flex-wrap: wrap;
         }
     </style>
 </head>
 <body>
 <div class="container">
-
-    <!-- ============================================================
-         CABECERA: LOGO + TÍTULO
-         ============================================================ -->
     <div class="header">
-        <!-- Logo de ML cargado desde /static/ml_logo.png -->
         <img src="{{ url_for('static', filename='ml_logo.png') }}" alt="ML Logo">
         <h1>Challenge ML</h1>
     </div>
 
-    <!-- Descripción rápida de lo que hace la herramienta -->
     <p>
         Conectate al dispositivo (GNS3 / físico / lab), obtené las VLANs y el hostname actuales,
         modificalos, hacé write memory, descargá el backup o subí la config a un servidor TFTP.
     </p>
 
-    <!--
-        Formulario principal.
-        Cada botón tiene un name="action" distinto, que Flask usa para
-        decidir qué hacer (fetch_all, save_config, download_config, tftp_upload, apply).
-    -->
     <form method="post" id="vlanForm">
 
         <!-- ========================================================
-             SECCIÓN: DATOS DE CONEXIÓN
+             DATOS DE CONEXIÓN AL DISPOSITIVO
              ======================================================== -->
         <div class="section-title">Datos de conexión al dispositivo</div>
 
         <table>
-            <!-- IP del equipo -->
             <tr>
                 <td>IP del dispositivo</td>
                 <td>
@@ -194,8 +160,6 @@
                            value="{{ device_ip or '' }}" required>
                 </td>
             </tr>
-
-            <!-- Usuario -->
             <tr>
                 <td>Usuario</td>
                 <td>
@@ -204,8 +168,6 @@
                            value="{{ username or '' }}" required>
                 </td>
             </tr>
-
-            <!-- Password (se rellena si estaba guardada en sesión) -->
             <tr>
                 <td>Password</td>
                 <td>
@@ -214,38 +176,20 @@
                            value="{{ password_value or '' }}">
                 </td>
             </tr>
-
-            <!-- Protocolo (Telnet/SSH) + Puerto de conexión -->
             <tr>
                 <td>Protocolo y Puerto</td>
                 <td>
                     <div class="port-proto-wrapper">
-                        <!-- Selector de protocolo (Netmiko: cisco_ios_telnet / cisco_ios) -->
                         <select name="protocol">
                             <option value="telnet" {% if protocol == 'telnet' %}selected{% endif %}>Telnet</option>
                             <option value="ssh" {% if protocol == 'ssh' %}selected{% endif %}>SSH</option>
                         </select>
-
-                        <!-- Puerto de conexión: por defecto 23 para Telnet, 22 para SSH (en backend) -->
                         <input type="number" name="port"
                                placeholder="Ej: 23"
                                value="{{ port or 23 }}">
                     </div>
                 </td>
             </tr>
-
-            <!-- Hostname que queremos aplicar en el equipo -->
-            <tr>
-                <td>Nombre del switch</td>
-                <td>
-                    <input type="text" name="hostname"
-                           placeholder="Ej: SW-LAB-01"
-                           value="{{ hostname or '' }}">
-                </td>
-            </tr>
-
-            <!-- IP del servidor TFTP.
-                 El backend generará automáticamente el nombre del archivo. -->
             <tr>
                 <td>Servidor TFTP (IP)</td>
                 <td>
@@ -256,36 +200,40 @@
             </tr>
         </table>
 
-        <!-- ========================================================
-             BOTONES PRINCIPALES (ACCIÓN SOBRE EL EQUIPO)
-             ======================================================== -->
+        <!-- BOTONES PRINCIPALES -->
         <div class="btn-group">
-            <!-- Lee VLANs y hostname actuales -->
             <button type="submit" class="btn" name="action" value="fetch_all">
                 Obtener VLANs y Hostname actuales
             </button>
-
-            <!-- Ejecuta write memory / save_config -->
             <button type="submit" class="btn" name="action" value="save_config">
                 Write Memory
             </button>
-
-            <!-- Descarga la running-config como archivo .txt -->
             <button type="submit" class="btn" name="action" value="download_config">
                 Descargar configuración (txt)
             </button>
-
-            <!-- copy running-config tftp: hacia la IP indicada -->
             <button type="submit" class="btn" name="action" value="tftp_upload">
                 Subir config a TFTP
             </button>
         </div>
 
         <!-- ========================================================
-             SECCIÓN: TABLA DE VLANs (EDICIÓN)
+             SECCIÓN SWITCH: HOSTNAME + VLANs
              ======================================================== -->
-        <div class="section-title">VLANs</div>
+        <div class="section-title">SWITCH</div>
 
+        <!-- Nombre del switch como primera línea de la sección SWITCH -->
+        <table>
+            <tr>
+                <td>Nombre del switch</td>
+                <td>
+                    <input type="text" name="hostname"
+                           placeholder="Ej: SW-LAB-01"
+                           value="{{ hostname or '' }}">
+                </td>
+            </tr>
+        </table>
+
+        <!-- Tabla de VLANs dentro de la sección SWITCH -->
         <table>
             <thead>
                 <tr>
@@ -295,7 +243,6 @@
                 </tr>
             </thead>
             <tbody id="vlanRows">
-                {# Si ya tenemos VLANs cargadas (por lectura o por post), las mostramos #}
                 {% if vlans and vlans|length > 0 %}
                     {% for vlan in vlans %}
                         <tr>
@@ -309,13 +256,11 @@
                                        placeholder="Ej: VLAN_DATOS">
                             </td>
                             <td>
-                                <!-- El botón "Borrar" elimina la fila del formulario -->
                                 <button type="button" class="btn btn-secondary" onclick="deleteRow(this)">Borrar</button>
                             </td>
                         </tr>
                     {% endfor %}
                 {% else %}
-                    {# Si no hay VLANs, mostramos una fila vacía como plantilla #}
                     <tr>
                         <td>
                             <input type="number" name="vlan_id" min="1" max="4094">
@@ -332,21 +277,15 @@
             </tbody>
         </table>
 
-        <!-- Botones para manipular la tabla de VLANs -->
+        <!-- Botones específicos de la sección SWITCH (VLANs/hostname) -->
         <div class="btn-group">
-            <!-- Agrega una nueva fila vacía -->
             <button type="button" class="btn" onclick="addRow()">Agregar VLAN</button>
-
-            <!-- Envía el formulario con la acción "apply" (aplicar VLANs + hostname) -->
             <button type="submit" class="btn" name="action" value="apply">
                 Aplicar cambios en el dispositivo
             </button>
         </div>
     </form>
 
-    <!-- ============================================================
-         MENSAJES DE ERROR / ÉXITO DESDE FLASK
-         ============================================================ -->
     {% if error_msg %}
         <div class="alert-error">{{ error_msg }}</div>
     {% endif %}
@@ -355,9 +294,6 @@
         <div class="alert-ok">{{ success_msg }}</div>
     {% endif %}
 
-    <!-- ============================================================
-         OUTPUT DETALLADO DE NETMIKO (logs de comandos)
-         ============================================================ -->
     {% if netmiko_output %}
         <div class="result">
             <strong>Output de Netmiko:</strong>
@@ -366,7 +302,6 @@
         </div>
     {% endif %}
 
-    <!-- Mostrar el hostname actual (tal como está en el formulario) -->
     {% if hostname %}
         <div class="result">
             <strong>Hostname actual (en formulario):</strong><br>
@@ -374,7 +309,6 @@
         </div>
     {% endif %}
 
-    <!-- Resumen de las VLANs que están en el formulario -->
     {% if vlans and vlans|length > 0 %}
         <div class="result">
             <strong>Resumen de VLANs actuales en el formulario:</strong><br>
@@ -385,11 +319,7 @@
     {% endif %}
 </div>
 
-<!-- ================================================================
-     JS SIMPLE PARA AGREGAR/BORRAR FILAS DE VLAN EN EL FORMULARIO
-     ================================================================ -->
 <script>
-    // Agrega una nueva fila vacía en la tabla de VLANs
     function addRow() {
         const tbody = document.getElementById("vlanRows");
         const tr = document.createElement("tr");
@@ -409,8 +339,6 @@
         tbody.appendChild(tr);
     }
 
-    // Elimina la fila donde está el botón "Borrar".
-    // Nunca permite dejar la tabla completamente vacía (deja al menos una fila).
     function deleteRow(button) {
         const row = button.parentNode.parentNode;
         const tbody = document.getElementById("vlanRows");
