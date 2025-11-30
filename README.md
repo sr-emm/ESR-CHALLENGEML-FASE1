@@ -11,6 +11,7 @@ Fase 1:
 <img width="1011" height="819" alt="image" src="https://github.com/user-attachments/assets/6d2dd9e6-7214-4737-af63-130b12d434b2" />
       La parte de conexion es intuitiva soicitando los datos para conexion hacia el mismo. IP, usuario y password. Luego puedes elegir el protocolo (telnet o SSH) y el puerto, este ultimo es especialmente util dado que al tener los equipos virtualizados tengo puertos muy disintos del 22/23. Una vez colocas los datos puedes presionar "Obtener VLANs y Hostname actuales"
      <img width="965" height="515" alt="image" src="https://github.com/user-attachments/assets/d9aa7bc8-8315-4572-b3d3-da87186690f6" />
+      
      Con esto obtienes todos los datos que se configuran y queda un output de los comandos obtenimos por netmiko
      <img width="981" height="1219" alt="image" src="https://github.com/user-attachments/assets/77817c8e-e36b-4c36-9009-5075217a7155" />
      <img width="1028" height="542" alt="image" src="https://github.com/user-attachments/assets/1a1426fa-ebc1-4380-aa04-919f8d4f22da" />
