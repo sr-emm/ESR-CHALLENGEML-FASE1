@@ -1,4 +1,18 @@
-import time
+"""
+app.py
+======
+Aplicación Flask para automatizar la configuración de un switch Cisco:
+
+- Conexión por Telnet o SSH (elegible en el frontend)
+- Lectura de VLANs actuales (show vlan brief)
+- Ignora VLANs 1002–1005 (FDDI/TokenRing)
+- Lectura y cambio de hostname
+- Aplicación de VLANs + hostname (configuration mode)
+- Write memory (save_config)
+- Descarga de running-config como archivo .txt
+- Envío de running-config a un servidor TFTP (copy run tftp:)
+"""
+
 from flask import Flask, render_template, request, session, make_response
 from netmiko import (
     ConnectHandler,
@@ -7,24 +21,36 @@ from netmiko import (
 )
 from datetime import datetime
 import re
+import time  # usado para pausar entre envíos en el copy run tftp
+
+###############################################################################
+# CONFIGURACIÓN BÁSICA DE FLASK
+###############################################################################
 
 app = Flask(__name__)
 
-# SOLO LAB – en algo real, usá una env var
+# Clave para manejar sesiones (en la vida real debería ir en variable de entorno)
 app.secret_key = "cambia-esta-clave-para-tu-lab"
 
-# VLANs legacy que no queremos ver ni tocar
+# VLANs "legacy" que aparecen siempre y no queremos tocar
 IGNORE_VLANS = {"1002", "1003", "1004", "1005"}
 
 
+###############################################################################
+# FUNCIONES AUXILIARES DE NETMIKO / DISPOSITIVO
+###############################################################################
+
 def build_device(device_ip, username, password, port, protocol):
     """
-    Arma el diccionario de conexión para Netmiko según el protocolo.
-    protocol: "telnet" o "ssh"
+    Devuelve el diccionario que Netmiko necesita para conectarse al equipo.
+
+    - protocol: "telnet" o "ssh"
+    - device_type cambia según el protocolo
     """
     if protocol == "ssh":
         device_type = "cisco_ios"
     else:
+        # Por simplicidad: tratamos todo lo que no sea "ssh" como Telnet
         device_type = "cisco_ios_telnet"
 
     return {
@@ -32,24 +58,29 @@ def build_device(device_ip, username, password, port, protocol):
         "host": device_ip,
         "username": username,
         "password": password,
-        "secret": password,  # si el enable es otro, cambialo
+        "secret": password,  # si el enable tiene otra password, habría que separarlo
         "port": port,
     }
 
 
 def apply_config(vlans, hostname, device_ip, username, password, port, protocol):
     """
-    Aplica configuración de VLANs y hostname en el dispositivo Cisco.
+    Aplica cambios de configuración al dispositivo:
+
+    - hostname (si viene informado)
+    - VLANs (vlan <id> + name <nombre>)
+
+    No guarda la configuración (no hace write memory); eso se maneja con otro botón.
     """
     device = build_device(device_ip, username, password, port, protocol)
 
     commands = []
 
-    # Cambiar nombre del switch si se indicó
+    # 1) Cambio de hostname
     if hostname:
         commands.append(f"hostname {hostname}")
 
-    # Config de VLANs
+    # 2) Definición / actualización de VLANs
     for vlan in vlans:
         vlan_id = vlan["id"]
         vlan_name = vlan["name"]
@@ -58,23 +89,27 @@ def apply_config(vlans, hostname, device_ip, username, password, port, protocol)
             f"name {vlan_name}",
         ])
 
+    # Si no hay nada para hacer, devolvemos un mensaje
     if not commands:
         return False, "No hay cambios para aplicar (sin hostname ni VLANs)."
 
     try:
         conn = ConnectHandler(**device)
 
-        # Intentar enable
+        # Intentamos entrar a modo enable (por si hace falta)
         try:
             conn.enable()
         except Exception:
+            # Si falla enable pero igual estamos en EXEC privilegiado, no pasa nada
             pass
 
+        # Mandamos la lista de comandos en modo configuración
         output = conn.send_config_set(commands)
 
         conn.disconnect()
         return True, output
 
+    # Manejo de errores “bonito”
     except NetmikoAuthenticationException as e:
         return False, f"Error de autenticación: {e}"
     except NetmikoTimeoutException as e:
@@ -85,7 +120,12 @@ def apply_config(vlans, hostname, device_ip, username, password, port, protocol)
 
 def fetch_current_vlans(device_ip, username, password, port, protocol):
     """
-    Ejecuta 'show vlan brief' y devuelve una lista de VLANs parseadas (sin 1002–1005).
+    Ejecuta 'show vlan brief' y parsea la salida para obtener una lista
+    de VLANs en el formato:
+
+        [{"id": "10", "name": "USERS"}, ...]
+
+    Ignora las VLANs 1002–1005.
     """
     device = build_device(device_ip, username, password, port, protocol)
 
@@ -113,15 +153,19 @@ def fetch_current_vlans(device_ip, username, password, port, protocol):
 
 def parse_vlans_from_show(output):
     """
-    Parseo simple de 'show vlan brief'.
-    Ignora las VLANs 1002–1005 (FDDI/TokenRing).
+    Parseo simple de la salida de 'show vlan brief'.
+
+    - Toma solo líneas que empiezan con dígito
+    - Usa espacios en blanco como separador
+    - El primer campo es el VLAN ID y el segundo el nombre
+    - Ignora los VLAN IDs en IGNORE_VLANS
     """
     vlans = []
     for line in output.splitlines():
         line = line.strip()
         if not line:
             continue
-        if not line[0].isdigit():
+        if not line[0].isdigit():  # descarta encabezados, etc.
             continue
 
         parts = re.split(r"\s+", line)
@@ -135,6 +179,7 @@ def parse_vlans_from_show(output):
             continue
 
         if vlan_id in IGNORE_VLANS:
+            # Saltamos VLANs legacy (FDDI / TokenRing)
             continue
 
         vlans.append({"id": vlan_id, "name": vlan_name})
@@ -144,7 +189,9 @@ def parse_vlans_from_show(output):
 
 def fetch_hostname(device_ip, username, password, port, protocol):
     """
-    Lee el hostname actual del dispositivo (show run | i ^hostname).
+    Obtiene el hostname actual del dispositivo ejecutando:
+
+        show running-config | include ^hostname
     """
     device = build_device(device_ip, username, password, port, protocol)
 
@@ -172,7 +219,9 @@ def fetch_hostname(device_ip, username, password, port, protocol):
 
 def parse_hostname_from_output(output):
     """
-    Busca una línea 'hostname X' y devuelve X.
+    Extrae el hostname de una salida que contenga líneas del tipo:
+
+        hostname MI_SWITCH
     """
     for line in output.splitlines():
         line = line.strip()
@@ -185,7 +234,13 @@ def parse_hostname_from_output(output):
 
 def save_config_only(device_ip, username, password, port, protocol):
     """
-    Solo ejecuta 'write memory' / 'copy run start' vía Netmiko (save_config()).
+    Llama a 'save_config()' de Netmiko, que normalmente ejecuta:
+
+        write memory
+    o
+        copy running-config startup-config
+
+    según el tipo de dispositivo.
     """
     device = build_device(device_ip, username, password, port, protocol)
 
@@ -200,6 +255,7 @@ def save_config_only(device_ip, username, password, port, protocol):
         try:
             output = conn.save_config()
         except Exception:
+            # Si por alguna razón save_config falla, devolvemos un mensaje genérico
             output = "No se pudo ejecutar save_config automáticamente (probá manualmente 'write memory')."
 
         conn.disconnect()
@@ -215,7 +271,11 @@ def save_config_only(device_ip, username, password, port, protocol):
 
 def fetch_full_config(device_ip, username, password, port, protocol):
     """
-    Obtiene la running-config completa (show running-config).
+    Devuelve la running-config completa usando:
+
+        show running-config
+
+    Esta salida se usa para descargarla como archivo .txt.
     """
     device = build_device(device_ip, username, password, port, protocol)
 
@@ -241,18 +301,29 @@ def fetch_full_config(device_ip, username, password, port, protocol):
 
 def upload_config_tftp(device_ip, username, password, port, protocol, tftp_ip, hostname):
     """
-    Ejecuta 'copy running-config tftp:' usando solo la IP TFTP.
-    El nombre del archivo se genera como:
-    Año-Mes-Dia-horaMinuto-Hostname.txt
+    Envía la running-config a un servidor TFTP ejecutando:
+
+        copy running-config tftp:
+
+    - Solo se pide la IP del servidor TFTP.
+    - El nombre del archivo se genera con el mismo formato que la descarga:
+
+        Año-Mes-Dia-horaMinuto-Hostname.txt
+        (por ejemplo: 2025-11-29-2218-SWITCH_AUTOMATIZADO.txt)
+
+    Implementado con write_channel / read_channel para controlar bien el diálogo.
     """
     tftp_ip = tftp_ip.strip()
 
-    # Validación muy básica de IP
+    # Validación simple de IP (no chequea rangos 0-255, solo formato x.x.x.x)
     if not re.match(r"^\d{1,3}(\.\d{1,3}){3}$", tftp_ip):
         return False, "IP de TFTP inválida. Ejemplo: 192.168.1.100"
 
+    # Si no tenemos hostname, inventamos uno genérico
     hn = hostname if hostname else "device"
+
     now = datetime.now()
+    # Mismo formato que el nombre del archivo descargado, sin guion entre hora y minuto
     tftp_filename = f"{now.year:04d}-{now.month:02d}-{now.day:02d}-{now.hour:02d}{now.minute:02d}-{hn}.txt"
 
     device = build_device(device_ip, username, password, port, protocol)
@@ -267,25 +338,25 @@ def upload_config_tftp(device_ip, username, password, port, protocol, tftp_ip, h
 
         output = ""
 
-        # 1) Lanzamos el copy
+        # 1) Lanzamos el comando "copy running-config tftp:"
         conn.write_channel("copy running-config tftp:\n")
         time.sleep(1)
         out = conn.read_channel()
         output += out
 
-        # 2) Enviamos IP del servidor TFTP
+        # 2) Respondemos con la IP del servidor TFTP
         conn.write_channel(tftp_ip + "\n")
         time.sleep(1)
         out = conn.read_channel()
         output += out
 
-        # 3) Enviamos nombre de archivo destino
+        # 3) Respondemos con el nombre de archivo destino
         conn.write_channel(tftp_filename + "\n")
         time.sleep(1)
         out = conn.read_channel()
         output += out
 
-        # 4) Si pide confirmación [confirm], mandamos ENTER
+        # 4) Si aparece un prompt de confirmación [confirm], mandamos ENTER extra
         if "[confirm]" in out.lower() or "confirm" in out.lower():
             conn.write_channel("\n")
             time.sleep(1)
@@ -303,31 +374,53 @@ def upload_config_tftp(device_ip, username, password, port, protocol, tftp_ip, h
         return False, f"Error inesperado: {e}"
 
 
+###############################################################################
+# RUTA PRINCIPAL DE FLASK (INDEX)
+###############################################################################
+
 @app.route("/", methods=["GET", "POST"])
 def index():
-    # Valores iniciales desde sesión
+    """
+    Controlador principal de la app.
+
+    Maneja tanto el GET (carga inicial del formulario) como el POST,
+    donde se ejecutan las distintas acciones:
+
+    - fetch_all     → Leer VLANs + hostname
+    - save_config   → Write memory
+    - download_config → Descargar running-config como .txt
+    - tftp_upload   → copy running-config tftp:
+    - apply         → Aplicar VLANs + hostname
+    """
+
+    # Recuperamos valores "persistentes" desde la sesión (si existen)
     device_ip = session.get("device_ip", "")
     username = session.get("username", "")
     stored_password = session.get("device_password", "")
     port = session.get("port", 23)
     hostname = session.get("hostname", "")
-    protocol = session.get("protocol", "telnet")  # telnet / ssh
+    protocol = session.get("protocol", "telnet")  # valor por defecto: telnet
     tftp_server = session.get("tftp_server", "")
 
+    # Variables que se usan para renderizar el template
     vlans = []
     error_msg = None
     success_msg = None
     netmiko_output = None
 
+    # Para manejar el campo password en el formulario
     password = ""
     password_for_field = stored_password
 
+    # -------------------------------------------------------------------------
+    # SI LLEGA UN POST (el usuario tocó algún botón del formulario)
+    # -------------------------------------------------------------------------
     if request.method == "POST":
-        action = request.form.get(
-            "action", "apply"
-        )  # apply, fetch_all, save_config, download_config, tftp_upload
+        # Acción solicitada por el usuario (botón presionado)
+        # Valores posibles: apply, fetch_all, save_config, download_config, tftp_upload
+        action = request.form.get("action", "apply")
 
-        # Datos de conexión
+        # Leemos los campos que vienen del formulario
         form_ip = request.form.get("device_ip", "").strip()
         form_user = request.form.get("username", "").strip()
         form_pass = request.form.get("password", "")
@@ -336,15 +429,17 @@ def index():
         form_protocol = request.form.get("protocol", "").strip().lower()
         form_tftp_server = request.form.get("tftp_server", "").strip()
 
+        # Actualizamos valores en memoria con lo que venga del formulario
         if form_ip:
             device_ip = form_ip
         if form_user:
             username = form_user
 
+        # Protocolo (telnet / ssh)
         if form_protocol in ("telnet", "ssh"):
             protocol = form_protocol
 
-        # puerto: si no se indica, por defecto 23 para telnet, 22 para ssh
+        # Puerto: si está vacío, ponemos el default según protocolo
         if form_port:
             try:
                 port = int(form_port)
@@ -353,18 +448,23 @@ def index():
         else:
             port = 23 if protocol == "telnet" else 22
 
+        # Hostname: si viene info nueva, la guardamos
         if form_hostname:
             hostname = form_hostname
 
+        # Password:
+        # - si la escribe, actualizamos
+        # - si la deja en blanco, usamos la almacenada en sesión
         if form_pass:
             password = form_pass
         else:
             password = stored_password
 
+        # Servidor TFTP (solo IP)
         if form_tftp_server:
             tftp_server = form_tftp_server
 
-        # Guardar en sesión
+        # Guardamos todos estos datos en la sesión para no tener que reescribirlos
         session["device_ip"] = device_ip
         session["username"] = username
         session["port"] = port
@@ -374,9 +474,13 @@ def index():
         if password:
             session["device_password"] = password
 
+        # Valor que se mostrará en el campo password (lo que tengamos guardado)
         password_for_field = password
 
-        # VLANs desde el formulario (para aplicar)
+        # ---------------------------------------------------------------------
+        # Parseamos las VLANs que vengan del formulario
+        # (se usan cuando se presiona "Aplicar cambios en el dispositivo")
+        # ---------------------------------------------------------------------
         vlan_ids = request.form.getlist("vlan_id")
         vlan_names = request.form.getlist("vlan_name")
 
@@ -387,15 +491,22 @@ def index():
             if not vid:
                 continue
             if vid in IGNORE_VLANS:
+                # Por si alguien quiere meter a mano una VLAN 1002–1005, la ignoramos
                 continue
             if not vname:
                 vname = f"VLAN_{vid}"
 
             vlans.append({"id": vid, "name": vname})
 
+        # ---------------------------------------------------------------------
+        # Validación básica de conexión
+        # ---------------------------------------------------------------------
         if not device_ip or not username or not password:
             error_msg = "Faltan datos de conexión (IP, usuario o password)."
         else:
+            # -----------------------------------------------------------------
+            # Acción: Leer VLANs + hostname (fetch_all)
+            # -----------------------------------------------------------------
             if action == "fetch_all":
                 ok_vlans, vlans_from_device, out_vlans = fetch_current_vlans(
                     device_ip=device_ip,
@@ -434,12 +545,16 @@ def index():
                 if msgs_err:
                     error_msg = " ".join(msgs_err)
 
+                # Construimos una salida combinada para mostrar en el textarea
                 netmiko_output = ""
                 if out_vlans:
                     netmiko_output += "=== show vlan brief ===\n" + out_vlans
                 if out_host:
                     netmiko_output += "\n\n=== hostname ===\n" + out_host
 
+            # -----------------------------------------------------------------
+            # Acción: Write memory (save_config)
+            # -----------------------------------------------------------------
             elif action == "save_config":
                 ok, output = save_config_only(
                     device_ip=device_ip,
@@ -454,6 +569,9 @@ def index():
                 else:
                     error_msg = output
 
+            # -----------------------------------------------------------------
+            # Acción: Descargar running-config como .txt (download_config)
+            # -----------------------------------------------------------------
             elif action == "download_config":
                 ok, cfg_output = fetch_full_config(
                     device_ip=device_ip,
@@ -463,22 +581,28 @@ def index():
                     protocol=protocol,
                 )
                 if not ok:
+                    # En este caso, cfg_output contiene el mensaje de error
                     error_msg = cfg_output
                 else:
+                    # Determinamos el hostname a usar en el nombre del archivo
                     hn = hostname or parse_hostname_from_output(cfg_output) or "device"
                     now = datetime.now()
                     filename = f"{now.year:04d}-{now.month:02d}-{now.day:02d}-{now.hour:02d}{now.minute:02d}-{hn}.txt"
 
+                    # Devolvemos una respuesta HTTP que fuerza la descarga del archivo
                     response = make_response(cfg_output)
                     response.headers["Content-Type"] = "text/plain"
                     response.headers["Content-Disposition"] = f"attachment; filename={filename}"
                     return response
 
+            # -----------------------------------------------------------------
+            # Acción: Subir running-config a TFTP (tftp_upload)
+            # -----------------------------------------------------------------
             elif action == "tftp_upload":
                 if not tftp_server:
                     error_msg = "Debes especificar la IP del servidor TFTP (ej: 192.168.1.100)."
                 else:
-                    # Si no tenemos hostname, intentamos leerlo antes de generar el nombre del archivo
+                    # Si no tenemos hostname, intentamos leerlo para usarlo en el nombre del archivo
                     if not hostname:
                         ok_host, hostname_from_device, _ = fetch_hostname(
                             device_ip=device_ip,
@@ -506,7 +630,10 @@ def index():
                     else:
                         error_msg = output
 
-            else:  # apply
+            # -----------------------------------------------------------------
+            # Acción por defecto: aplicar VLANs + hostname (apply)
+            # -----------------------------------------------------------------
+            else:  # action == "apply"
                 if len(vlans) == 0 and not hostname:
                     error_msg = "No hay cambios para aplicar (ni VLANs ni hostname)."
                 else:
@@ -525,6 +652,9 @@ def index():
                     else:
                         error_msg = output
 
+    # -------------------------------------------------------------------------
+    # Renderizamos la plantilla con todos los datos recopilados
+    # -------------------------------------------------------------------------
     return render_template(
         "index.html",
         vlans=vlans,
@@ -541,5 +671,10 @@ def index():
     )
 
 
+###############################################################################
+# LANZAR LA APLICACIÓN (solo en modo desarrollo)
+###############################################################################
+
 if __name__ == "__main__":
+    # host="0.0.0.0" → accesible desde otras máquinas de la red
     app.run(host="0.0.0.0", port=5000, debug=True)
