@@ -11,6 +11,7 @@ Aplicación Flask para automatizar la configuración de un switch Cisco:
 - Write memory (save_config)
 - Descarga de running-config como archivo .txt
 - Envío de running-config a un servidor TFTP (copy run tftp:)
+- Regla de negocio: los nombres de VLAN no pueden tener más de 20 caracteres
 """
 
 from flask import Flask, render_template, request, session, make_response
@@ -23,13 +24,14 @@ from datetime import datetime
 import re
 import time  # usado para pausar entre envíos en el copy run tftp
 
+
 ###############################################################################
 # CONFIGURACIÓN BÁSICA DE FLASK
 ###############################################################################
 
 app = Flask(__name__)
 
-# Clave para manejar sesiones (en la vida real debería ir en variable de entorno)
+# Clave para manejar sesiones (en un entorno real debería ir en una env var)
 app.secret_key = "cambia-esta-clave-para-tu-lab"
 
 # VLANs "legacy" que aparecen siempre y no queremos tocar
@@ -159,6 +161,7 @@ def parse_vlans_from_show(output):
     - Usa espacios en blanco como separador
     - El primer campo es el VLAN ID y el segundo el nombre
     - Ignora los VLAN IDs en IGNORE_VLANS
+    - El nombre se corta a máximo 20 caracteres (regla de negocio)
     """
     vlans = []
     for line in output.splitlines():
@@ -181,6 +184,10 @@ def parse_vlans_from_show(output):
         if vlan_id in IGNORE_VLANS:
             # Saltamos VLANs legacy (FDDI / TokenRing)
             continue
+
+        # Regla: máximo 20 caracteres en nombre de VLAN
+        if len(vlan_name) > 20:
+            vlan_name = vlan_name[:20]
 
         vlans.append({"id": vlan_id, "name": vlan_name})
 
@@ -386,11 +393,11 @@ def index():
     Maneja tanto el GET (carga inicial del formulario) como el POST,
     donde se ejecutan las distintas acciones:
 
-    - fetch_all     → Leer VLANs + hostname
-    - save_config   → Write memory
+    - fetch_all       → Leer VLANs + hostname
+    - save_config     → Write memory
     - download_config → Descargar running-config como .txt
-    - tftp_upload   → copy running-config tftp:
-    - apply         → Aplicar VLANs + hostname
+    - tftp_upload     → copy running-config tftp:
+    - apply           → Aplicar VLANs + hostname
     """
 
     # Recuperamos valores "persistentes" desde la sesión (si existen)
@@ -495,6 +502,10 @@ def index():
                 continue
             if not vname:
                 vname = f"VLAN_{vid}"
+
+            # Regla: máximo 20 caracteres en el nombre de VLAN (seguridad backend)
+            if len(vname) > 20:
+                vname = vname[:20]
 
             vlans.append({"id": vid, "name": vname})
 
