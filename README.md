@@ -63,8 +63,10 @@ Para instala:
 <img width="445" height="33" alt="image" src="https://github.com/user-attachments/assets/47168e3a-2c81-4023-922c-602dc75f4f65" /> 
 3. Dentro del Enviroment: instalar Flask para el Frontend:  pip install Flask
 <img width="485" height="30" alt="image" src="https://github.com/user-attachments/assets/764a66c4-ea44-4d24-9881-3ae847ea7109" /> 
+ 
 4. Luego instalar Netmiko:  pip install netmiko
 <img width="1165" height="44" alt="image" src="https://github.com/user-attachments/assets/fca7ebdd-b9a5-4e8d-8ad9-c3cda8690884" /> 
+ 
 5. Cambiarse al folder donde esta el scrip y correr con ypthon el app.py: python .\app.py
 <img width="1157" height="34" alt="image" src="https://github.com/user-attachments/assets/791a7863-bb95-4e6d-9248-249fbb3a1ada" /> 
 
