@@ -248,7 +248,9 @@ def index():
     password_for_field = stored_password
 
     if request.method == "POST":
-        action = request.form.get("action", "apply")  # apply, fetch_vlans, fetch_hostname, save_config, download_config
+        action = request.form.get(
+            "action", "apply"
+        )  # apply, fetch_all, save_config, download_config
 
         # Datos de conexión
         form_ip = request.form.get("device_ip", "").strip()
@@ -305,39 +307,53 @@ def index():
             vlans.append({"id": vid, "name": vname})
 
         if not device_ip or not username or not password:
-            # Para cualquier acción necesitamos credenciales
             error_msg = "Faltan datos de conexión (IP, usuario o password)."
         else:
-            if action == "fetch_vlans":
-                ok, vlans_from_device, output = fetch_current_vlans(
-                    device_ip=device_ip,
-                    username=username,
-                    password=password,
-                    port=port,
-                    device_type="cisco_ios_telnet",  # "cisco_ios" si usás SSH
-                )
-                if ok:
-                    vlans = vlans_from_device
-                    success_msg = "VLANs leídas correctamente del dispositivo."
-                    netmiko_output = output
-                else:
-                    error_msg = output
-
-            elif action == "fetch_hostname":
-                ok, hostname_from_device, output = fetch_hostname(
+            if action == "fetch_all":
+                # Leer VLANs y hostname en una sola acción
+                ok_vlans, vlans_from_device, out_vlans = fetch_current_vlans(
                     device_ip=device_ip,
                     username=username,
                     password=password,
                     port=port,
                     device_type="cisco_ios_telnet",
                 )
-                if ok:
-                    hostname = hostname_from_device or hostname
-                    session["hostname"] = hostname
-                    success_msg = "Nombre del switch leído correctamente."
-                    netmiko_output = output
+                ok_host, hostname_from_device, out_host = fetch_hostname(
+                    device_ip=device_ip,
+                    username=username,
+                    password=password,
+                    port=port,
+                    device_type="cisco_ios_telnet",
+                )
+
+                msgs_ok = []
+                msgs_err = []
+
+                if ok_vlans:
+                    vlans = vlans_from_device
+                    msgs_ok.append("VLANs leídas correctamente.")
                 else:
-                    error_msg = output
+                    msgs_err.append(f"Error leyendo VLANs: {vlans_from_device}")
+
+                if ok_host:
+                    if hostname_from_device:
+                        hostname = hostname_from_device
+                        session["hostname"] = hostname
+                    msgs_ok.append("Hostname leído correctamente.")
+                else:
+                    msgs_err.append(f"Error leyendo hostname: {hostname_from_device}")
+
+                if msgs_ok:
+                    success_msg = " ".join(msgs_ok)
+                if msgs_err:
+                    error_msg = " ".join(msgs_err)
+
+                # Combinar outputs
+                netmiko_output = ""
+                if out_vlans:
+                    netmiko_output += "=== show vlan brief ===\n" + out_vlans
+                if out_host:
+                    netmiko_output += "\n\n=== hostname ===\n" + out_host
 
             elif action == "save_config":
                 ok, output = save_config_only(

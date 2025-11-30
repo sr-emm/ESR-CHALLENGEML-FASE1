@@ -120,7 +120,7 @@
         <h1>Challenge ML</h1>
     </div>
 
-    <p>Conectate al dispositivo (GNS3 / físico / lab), leé las VLANs y el nombre del switch, modificalos, guardá la configuración y descargá el backup.</p>
+    <p>Conectate al dispositivo (GNS3 / físico / lab), obtené las VLANs y el hostname actuales, modificalos, hacé write memory y descargá el backup.</p>
 
     <form method="post" id="vlanForm">
         <div class="section-title">Datos de conexión al dispositivo</div>
@@ -167,6 +167,19 @@
             </tr>
         </table>
 
+        <!-- Grupo superior: obtener info + write memory + download -->
+        <div class="btn-group">
+            <button type="submit" class="btn" name="action" value="fetch_all">
+                Obtener VLANs y Hostname actuales
+            </button>
+            <button type="submit" class="btn" name="action" value="save_config">
+                Write Memory
+            </button>
+            <button type="submit" class="btn" name="action" value="download_config">
+                Descargar configuración (txt)
+            </button>
+        </div>
+
         <div class="section-title">VLANs</div>
         <table>
             <thead>
@@ -211,22 +224,11 @@
             </tbody>
         </table>
 
+        <!-- Grupo inferior: solo VLAN stuff -->
         <div class="btn-group">
             <button type="button" class="btn" onclick="addRow()">Agregar VLAN</button>
             <button type="submit" class="btn" name="action" value="apply">
-                Aplicar VLANs / hostname en el dispositivo
-            </button>
-            <button type="submit" class="btn" name="action" value="fetch_vlans">
-                Leer VLANs actuales del dispositivo
-            </button>
-            <button type="submit" class="btn" name="action" value="fetch_hostname">
-                Leer nombre del switch
-            </button>
-            <button type="submit" class="btn" name="action" value="save_config">
-                Guardar configuración en el dispositivo
-            </button>
-            <button type="submit" class="btn" name="action" value="download_config">
-                Descargar configuración (txt)
+                Aplicar cambios en el dispositivo
             </button>
         </div>
     </form>
