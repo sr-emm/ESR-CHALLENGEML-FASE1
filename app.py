@@ -459,6 +459,10 @@ def index():
         if form_hostname:
             hostname = form_hostname
 
+        # Límite backend de 20 caracteres
+        if hostname and len(hostname) > 20:
+            hostname = hostname[:20]
+
         # Password:
         # - si la escribe, actualizamos
         # - si la deja en blanco, usamos la almacenada en sesión

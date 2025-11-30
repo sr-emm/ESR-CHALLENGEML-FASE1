@@ -281,9 +281,11 @@
             <tr>
                 <td>Nombre del switch</td>
                 <td>
-                    <input type="text" name="hostname"
-                           placeholder="Ej: SW-LAB-01"
-                           value="{{ hostname or '' }}">
+				<input type="text" name="hostname"
+					   placeholder="Ej: SW-LAB-01"
+					   value="{{ hostname or '' }}"
+					   maxlength="20"
+					   title="El hostname no puede tener más de 20 caracteres.">
                 </td>
             </tr>
         </table>
