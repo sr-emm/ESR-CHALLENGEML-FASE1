@@ -1,452 +1,325 @@
-<!doctype html>
-<html lang="es">
+<!DOCTYPE html>
+<html lang="es" class="dark">
 <head>
-    <meta charset="utf-8">
-    <title>Challenge ML</title>
-
-    <!--
-        Estilos básicos sin frameworks.
-        Todo el contenido vive dentro de .container centrado y con fondo oscuro.
-    -->
-	<style>
-		body {
-			font-family: Arial, sans-serif;
-			background-color: #1e1e1e;
-			color: #eee;
-		}
-		.container {
-			max-width: 900px;
-			margin: 40px auto;
-			background: #2b2b2b;
-			padding: 20px 30px;
-			border-radius: 8px;
-			box-shadow: 0 0 10px #000;
-		}
-
-		/* Cabecera: logo + título centrados */
-		.header {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			gap: 15px;
-			margin-bottom: 10px;
-		}
-		.header img {
-			height: 48px;
-		}
-		h1 {
-			margin: 0;
-		}
-
-		p {
-			font-size: 14px;
-			color: #ccc;
-		}
-
-		/* Tablas para alinear etiquetas y campos */
-		table {
-			width: 100%;
-			border-collapse: collapse;
-			margin-top: 15px;
-		}
-		th, td {
-			border: 1px solid #555;
-			padding: 8px;
-			text-align: center;
-		}
-		th {
-			background: #444;
-		}
-
-		/* Inputs / selects con look oscuro */
-		input[type="number"],
-		input[type="text"],
-		input[type="password"],
-		select {
-			padding: 6px;
-			border-radius: 4px;
-			border: 1px solid #555;
-			background: #111;
-			color: #eee;
-		}
-		/* Que ocupen casi todo el ancho de la celda */
-		input[type="number"],
-		input[type="text"],
-		input[type="password"] {
-			width: 95%;
-		}
-
-		/* Wrapper horizontal para "Protocolo y Puerto" (select + input number) */
-		.port-proto-wrapper {
-			display: inline-flex;   /* inline para que el <td> centrado lo alinee */
-			gap: 8px;
-			align-items: center;
-			width: 95%;
-		}
-		.port-proto-wrapper input[type="number"],
-		.port-proto-wrapper select {
-			flex: 1 1 0;           /* reparte el ancho entre ambos */
-			width: 100%;
-		}
-
-		/* Botones principales */
-		.btn {
-			margin-top: 15px;
-			padding: 10px 16px;
-			border: none;
-			border-radius: 4px;
-			background: #007bff;
-			color: white;
-			font-size: 14px;
-			cursor: pointer;
-		}
-		.btn:hover {
-			background: #0069d9;
-		}
-		.btn-secondary {
-			background: #6c757d;
-		}
-		.btn-secondary:hover {
-			background: #5a6268;
-		}
-
-		/* Panel de resultados / logs */
-		.result {
-			margin-top: 30px;
-			padding: 15px;
-			background: #333;
-			border-radius: 4px;
-			white-space: pre-wrap;
-			font-family: "Consolas", monospace;
-			font-size: 13px;
-		}
-
-		/* Mensajes de error / éxito */
-		.alert-error {
-			background: #661515;
-			color: #ffd0d0;
-			padding: 10px;
-			border-radius: 4px;
-			margin-top: 15px;
-		}
-		.alert-ok {
-			background: #155724;
-			color: #d4edda;
-			padding: 10px;
-			border-radius: 4px;
-			margin-top: 15px;
-		}
-
-		/* Títulos de secciones (línea divisoria gris) */
-		.section-title {
-			margin-top: 20px;
-			font-weight: bold;
-			border-bottom: 1px solid #555;
-			padding-bottom: 4px;
-		}
-
-		/* Grupos de botones en fila, con wrap para pantallas angostas */
-		.btn-group {
-			margin-top: 15px;
-			display: flex;
-			gap: 10px;
-			flex-wrap: wrap;
-		}
-
-		/* ---------- Ajustes específicos de la tabla de VLANs ---------- */
-
-		/* Tabla de VLANs: filas más bajas */
-		.vlan-table th,
-		.vlan-table td {
-			padding: 4px 6px;        /* menos padding que el resto */
-			vertical-align: middle;  /* centra verticalmente el contenido */
-		}
-
-		/* Inputs dentro de la tabla de VLANs: más bajos y compactos */
-		.vlan-table input[type="number"],
-		.vlan-table input[type="text"] {
-			padding: 3px 4px;
-			font-size: 13px;
-			height: 24px;            /* fuerza altura más chica */
-		}
-
-		/* Botón "Borrar" dentro de la tabla de VLANs:
-		   sin margen superior y centrado en su celda */
-		.vlan-table .btn-secondary {
-			margin-top: 0;           /* elimina el margen de .btn */
-			padding: 4px 10px;
-			display: inline-block;
-		}
-	</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Challenge ML - Network Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gray: {
+                            850: '#1f2937',
+                            900: '#111827',
+                            950: '#030712',
+                        },
+                        switch: {
+                            DEFAULT: '#10b981', 
+                            dim: '#064e3b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        
+        .input-dark {
+            background-color: #374151;
+            border: 1px solid #4b5563;
+            color: #f3f4f6;
+            height: 2.5rem; 
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .input-dark:focus {
+            border-color: #10b981;
+            ring: 2px solid #10b981;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+        select.input-dark { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
-<body>
-<div class="container">
+<body class="bg-gray-950 text-gray-100 min-h-screen p-4 md:p-8">
 
-    <!-- ============================================================
-         CABECERA: LOGO + TÍTULO
-         ============================================================ -->
-    <div class="header">
-        <!-- Logo en /static/ml_logo.png -->
-        <img src="{{ url_for('static', filename='ml_logo.png') }}" alt="ML Logo">
-        <h1>Challenge ML</h1>
+<div class="max-w-7xl mx-auto space-y-8">
+
+    <!-- HEADER -->
+    <div class="text-center space-y-2">
+        <h1 class="text-4xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-200 to-cyan-500 bg-clip-text text-transparent">
+            Switch Manager
+        </h1>
+        <p class="text-gray-400 text-sm font-mono">Automation Interface // L2 Configuration</p>
     </div>
 
-    <!-- Descripción general de la herramienta -->
-    <p>
-        Conectate al dispositivo (GNS3 / físico / lab), obtené las VLANs y el hostname actuales,
-        modificalos, hacé write memory, descargá el backup o subí la config a un servidor TFTP.
-    </p>
+    <!-- FORMULARIO -->
+    <form method="post" id="vlanForm" class="space-y-6">
 
-    <!--
-        Formulario principal.
-        Según el botón que se pulse, se envía un action distinto (fetch_all, save_config, etc.)
-    -->
-    <form method="post" id="vlanForm">
+        <!-- CARD 1: DATOS DE CONEXIÓN -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-xl relative overflow-hidden group hover:border-emerald-900/50 transition-colors">
+            <div class="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-600 to-teal-600"></div>
+            
+            <h2 class="text-xl font-bold text-gray-200 mb-6 flex items-center gap-2 border-b border-gray-800 pb-2">
+                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Parámetros de Acceso
+            </h2>
 
-        <!-- ========================================================
-             SECCIÓN: DATOS DE CONEXIÓN
-             ======================================================== -->
-        <div class="section-title">Datos de conexión al dispositivo</div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- IP Device -->
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">IP Dispositivo</label>
+                    <input type="text" name="device_ip" 
+                           value="{{ device_ip or '' }}" 
+                           placeholder="Ej: 10.20.20.1"
+                           class="w-full rounded-md px-3 input-dark font-mono text-emerald-400"
+                           required>
+                </div>
 
-        <table>
-            <!-- IP del dispositivo -->
-            <tr>
-                <td>IP del dispositivo</td>
-                <td>
-					<input type="text" name="device_ip"
-						   placeholder="Ej: 10.20.20.1"
-						   value="{{ device_ip or '' }}"
-						   pattern="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
-						   title="Debe ser una dirección IPv4 válida. Ej: 192.168.1.10"
-						   required>
-                </td>
-            </tr>
+                <!-- Username -->
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Usuario</label>
+                    <input type="text" name="username" 
+                           value="{{ username or '' }}" 
+                           placeholder="admin"
+                           class="w-full rounded-md px-3 input-dark">
+                </div>
 
-            <!-- Usuario -->
-            <tr>
-                <td>Usuario</td>
-                <td>
-                    <input type="text" name="username"
-                           placeholder="Ej: admin"
-                           value="{{ username or '' }}" required>
-                </td>
-            </tr>
+                <!-- Password -->
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Password</label>
+                    <input type="password" name="password" 
+                           value="{{ password_value or '' }}" 
+                           placeholder="••••••"
+                           class="w-full rounded-md px-3 input-dark">
+                </div>
 
-            <!-- Password (se rellena desde sesión si ya se usó antes) -->
-            <tr>
-                <td>Password</td>
-                <td>
-                    <input type="password" name="password"
-                           placeholder="Password"
-                           value="{{ password_value or '' }}">
-                </td>
-            </tr>
-
-            <!-- Protocolo (Telnet/SSH) + Puerto -->
-            <tr>
-                <td>Protocolo y Puerto</td>
-                <td>
-                    <div class="port-proto-wrapper">
-                        <!-- Selector de protocolo -->
-                        <select name="protocol">
-                            <option value="telnet" {% if protocol == 'telnet' %}selected{% endif %}>Telnet</option>
+                <!-- Protocol & Port -->
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Protocolo / Puerto</label>
+                    <div class="flex gap-2">
+                        <!-- ID agregado para JS -->
+                        <select name="protocol" id="protocolSelect" class="flex-1 rounded-md px-3 input-dark cursor-pointer">
                             <option value="ssh" {% if protocol == 'ssh' %}selected{% endif %}>SSH</option>
+                            <option value="telnet" {% if protocol == 'telnet' %}selected{% endif %}>Telnet</option>
                         </select>
-                        <!-- Puerto de conexión (por defecto 23/22 según protocolo en el backend) -->
-                        <input type="number" name="port"
-                               placeholder="Ej: 23"
-                               value="{{ port or 23 }}">
+                        <!-- ID agregado para JS -->
+                        <input type="number" name="port" id="portInput"
+                               value="{{ port or 22 }}" 
+                               placeholder="22"
+                               class="w-24 rounded-md px-3 input-dark text-center">
                     </div>
-                </td>
-            </tr>
+                </div>
 
-            <!-- IP del servidor TFTP (el nombre de archivo lo construye el backend) -->
-            <tr>
-                <td>Servidor TFTP (IP)</td>
-                <td>
-                    <input type="text" name="tftp_server"
+                <!-- TFTP Server -->
+                <div class="space-y-1 md:col-span-2">
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Servidor TFTP (Backup)</label>
+                    <input type="text" name="tftp_server" 
+                           value="{{ tftp_server or '' }}" 
                            placeholder="Ej: 192.168.1.100"
-                           value="{{ tftp_server or '' }}">
-                </td>
-            </tr>
-        </table>
+                           class="w-full rounded-md px-3 input-dark font-mono">
+                </div>
+            </div>
 
-        <!-- ========================================================
-             BOTONES PRINCIPALES (sobre la conexión / config)
-             ======================================================== -->
-        <div class="btn-group">
-            <!-- Lee VLANs y hostname del dispositivo -->
-            <button type="submit" class="btn" name="action" value="fetch_all">
-                Obtener VLANs y Hostname actuales
-            </button>
+            <!-- Botones de Acción -->
+            <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button type="submit" name="action" value="fetch_all" class="bg-gray-800 hover:bg-emerald-900 border border-gray-700 hover:border-emerald-500 text-emerald-400 py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 group shadow-lg">
+                    <svg class="w-5 h-5 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4 4m0 0L8 8m4-4v12"></path></svg>
+                    <span class="font-bold text-sm">Leer Config</span>
+                </button>
 
-            <!-- Ejecuta write memory / save_config -->
-            <button type="submit" class="btn" name="action" value="save_config">
-                Write Memory
-            </button>
+                <button type="submit" name="action" value="save_config" class="bg-gray-800 hover:bg-blue-900 border border-gray-700 hover:border-blue-500 text-blue-400 py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                    <span class="font-bold text-sm">Write Mem</span>
+                </button>
 
-            <!-- Descarga running-config como .txt -->
-            <button type="submit" class="btn" name="action" value="download_config">
-                Descargar configuración (txt)
-            </button>
+                <button type="submit" name="action" value="download_config" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span class="font-bold text-sm">Descargar .txt</span>
+                </button>
 
-            <!-- Envía running-config a TFTP -->
-            <button type="submit" class="btn" name="action" value="tftp_upload">
-                Subir config a TFTP
-            </button>
+                <button type="submit" name="action" value="tftp_upload" class="bg-gray-800 hover:bg-purple-900 border border-gray-700 hover:border-purple-500 text-purple-400 py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    <span class="font-bold text-sm">Subir a TFTP</span>
+                </button>
+            </div>
         </div>
 
-        <!-- ========================================================
-             SECCIÓN SWITCH: HOSTNAME + VLANs
-             ======================================================== -->
-        <div class="section-title">SWITCH</div>
+        <!-- CARD 2: CONFIGURACIÓN L2 (HOSTNAME & VLANS) -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-xl relative">
+            
+            <h2 class="text-xl font-bold text-gray-200 mb-6 flex items-center gap-2 border-b border-gray-800 pb-2">
+                <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                Configuración Layer 2
+            </h2>
 
-        <!-- Nombre del switch como primer elemento de la sección SWITCH -->
-        <table>
-            <tr>
-                <td>Nombre del switch</td>
-                <td>
-				<input type="text" name="hostname"
-					   placeholder="Ej: SW-LAB-01"
-					   value="{{ hostname or '' }}"
-					   maxlength="20"
-					   title="El hostname no puede tener más de 20 caracteres.">
-                </td>
-            </tr>
-        </table>
-		
-        <!-- Tabla de VLANs del switch -->
-        <table class="vlan-table">
-            <thead>
-                <tr>
-                    <th>VLAN ID</th>
-                    <th>Nombre de VLAN</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody id="vlanRows">
-                {# Si ya tenemos VLANs cargadas (por fetch o por post), las mostramos #}
-                {% if vlans and vlans|length > 0 %}
-                    {% for vlan in vlans %}
+            <!-- Hostname -->
+            <div class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-center bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+                <label class="md:col-span-1 text-sm font-bold text-teal-400 uppercase tracking-wider">Hostname del Switch</label>
+                <div class="md:col-span-3">
+                    <input type="text" name="hostname" 
+                           value="{{ hostname or '' }}" 
+                           placeholder="Ej: SW-CORE-01"
+                           maxlength="20"
+                           class="w-full rounded-md px-3 input-dark font-mono text-lg text-teal-300 focus:text-white border-l-4 border-l-teal-600">
+                </div>
+            </div>
+
+            <!-- VLAN Table Container -->
+            <div class="rounded-lg border border-gray-700 overflow-hidden">
+                <table class="w-full text-left text-sm text-gray-400">
+                    <thead class="bg-gray-800 text-gray-200 uppercase font-mono text-xs">
                         <tr>
-                            <td>
-                                <input type="number" name="vlan_id" min="1" max="4094"
-                                       value="{{ vlan.id }}">
-                            </td>
-                            <td>
-                                <!-- Regla UI: máximo 20 caracteres en nombre de VLAN -->
-                                <input type="text" name="vlan_name"
-                                       value="{{ vlan.name }}"
-                                       placeholder="Ej: VLAN_DATOS"
-                                       maxlength="20">
-                            </td>
-                            <td>
-                                <button type="button" class="btn btn-secondary"
-                                        onclick="deleteRow(this)">Borrar</button>
-                            </td>
+                            <th class="px-6 py-3 w-32 tracking-wider">VLAN ID</th>
+                            <th class="px-6 py-3 tracking-wider">Nombre de VLAN</th>
+                            <th class="px-6 py-3 w-24 text-center">Acción</th>
                         </tr>
-                    {% endfor %}
-                {% else %}
-                    {# Fila inicial vacía si todavía no hay VLANs #}
-                    <tr>
-                        <td>
-                            <input type="number" name="vlan_id" min="1" max="4094">
-                        </td>
-                        <td>
-                            <!-- Regla UI: máximo 20 caracteres en nombre de VLAN -->
-                            <input type="text" name="vlan_name"
-                                   placeholder="Ej: VLAN_DATOS"
-                                   maxlength="20">
-                        </td>
-                        <td>
-                            <button type="button" class="btn btn-secondary"
-                                    onclick="deleteRow(this)">Borrar</button>
-                        </td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
-
-        <!-- Botones específicos para manipular VLANs / hostname -->
-        <div class="btn-group">
-            <!-- Agrega una fila vacía de VLAN -->
-            <button type="button" class="btn" onclick="addRow()">Agregar VLAN</button>
-
-            <!-- Aplica cambios de hostname + VLANs al dispositivo -->
-            <button type="submit" class="btn" name="action" value="apply">
-                Aplicar cambios en el dispositivo
-            </button>
+                    </thead>
+                    <tbody id="vlanRows" class="divide-y divide-gray-800 bg-gray-900">
+                        <!-- BUCLE JINJA2 para persistir filas -->
+                        {% if vlans and vlans|length > 0 %}
+                            {% for vlan in vlans %}
+                            <tr class="hover:bg-gray-800/50 transition-colors">
+                                <td class="px-4 py-3">
+                                    <input type="number" name="vlan_id" min="1" max="4094" value="{{ vlan.id }}"
+                                           class="w-full rounded px-2 py-1.5 bg-gray-800 border border-gray-600 focus:border-teal-500 text-center font-mono text-white focus:outline-none focus:ring-1 focus:ring-teal-500">
+                                </td>
+                                <td class="px-4 py-3">
+                                    <input type="text" name="vlan_name" value="{{ vlan.name }}" maxlength="20"
+                                           class="w-full rounded px-2 py-1.5 bg-gray-800 border border-gray-600 focus:border-teal-500 font-mono text-white focus:outline-none focus:ring-1 focus:ring-teal-500">
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <button type="button" onclick="deleteRow(this)" class="p-1 rounded hover:bg-red-900/30 text-red-400 hover:text-red-200 transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <!-- Fila por defecto si no hay datos -->
+                            <tr class="hover:bg-gray-800/50 transition-colors">
+                                <td class="px-4 py-3">
+                                    <input type="number" name="vlan_id" min="1" max="4094" placeholder="ID"
+                                           class="w-full rounded px-2 py-1.5 bg-gray-800 border border-gray-600 focus:border-teal-500 text-center font-mono text-white focus:outline-none focus:ring-1 focus:ring-teal-500">
+                                </td>
+                                <td class="px-4 py-3">
+                                    <input type="text" name="vlan_name" placeholder="NOMBRE" maxlength="20"
+                                           class="w-full rounded px-2 py-1.5 bg-gray-800 border border-gray-600 focus:border-teal-500 font-mono text-white focus:outline-none focus:ring-1 focus:ring-teal-500">
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <button type="button" onclick="deleteRow(this)" class="p-1 rounded hover:bg-red-900/30 text-red-400 hover:text-red-200 transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Controles de Tabla y Aplicar -->
+            <div class="mt-4 flex flex-col md:flex-row justify-between gap-4 pt-2">
+                <button type="button" onclick="addRow()" class="text-teal-400 hover:text-teal-200 text-sm font-bold flex items-center gap-2 px-2 py-1 rounded hover:bg-teal-900/20 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    AGREGAR VLAN
+                </button>
+                
+                <button type="submit" name="action" value="apply" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg transform transition hover:scale-[1.02] flex items-center justify-center gap-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    APLICAR CAMBIOS
+                </button>
+            </div>
         </div>
+
     </form>
 
-    <!-- ============================================================
-         MENSAJES DE ERROR / ÉXITO
-         ============================================================ -->
+    <!-- MENSAJES DE ESTADO -->
     {% if error_msg %}
-        <div class="alert-error">{{ error_msg }}</div>
+        <div class="bg-red-900/30 border border-red-800 text-red-200 p-4 rounded-lg flex items-center gap-3 fade-in">
+            <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="font-mono text-sm">{{ error_msg }}</span>
+        </div>
     {% endif %}
 
     {% if success_msg %}
-        <div class="alert-ok">{{ success_msg }}</div>
+        <div class="bg-emerald-900/30 border border-emerald-800 text-emerald-200 p-4 rounded-lg flex items-center gap-3 fade-in">
+            <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="font-mono text-sm">{{ success_msg }}</span>
+        </div>
     {% endif %}
 
-    <!-- ============================================================
-         OUTPUT DETALLADO DE NETMIKO
-         ============================================================ -->
+    <!-- OUTPUT NETMIKO -->
     {% if netmiko_output %}
-        <div class="result">
-            <strong>Output de Netmiko:</strong>
-            <br><br>
-            {{ netmiko_output }}
+        <div class="bg-black border border-gray-800 rounded-lg p-4 shadow-2xl font-mono text-sm overflow-x-auto">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-2 mb-2">
+                <span class="text-gray-500 text-xs uppercase tracking-widest">Terminal Output Console</span>
+                <div class="flex gap-1.5">
+                    <div class="w-3 h-3 rounded-full bg-red-500 opacity-70"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500 opacity-70"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500 opacity-70"></div>
+                </div>
+            </div>
+            <pre class="text-[#33ff00] whitespace-pre-wrap font-mono leading-relaxed">{{ netmiko_output }}</pre>
         </div>
     {% endif %}
 
-    <!-- Hostname que está cargado actualmente en el formulario -->
-    {% if hostname %}
-        <div class="result">
-            <strong>Hostname actual (en formulario):</strong><br>
-            {{ hostname }}
-        </div>
-    {% endif %}
-
-    <!-- Resumen de VLANs que están en el formulario -->
-    {% if vlans and vlans|length > 0 %}
-        <div class="result">
-            <strong>Resumen de VLANs actuales en el formulario:</strong><br>
-            {% for vlan in vlans %}
-                VLAN {{ vlan.id }} - {{ vlan.name }}<br>
-            {% endfor %}
-        </div>
-    {% endif %}
 </div>
 
-<!-- ================================================================
-     JS: agregar / borrar filas de VLAN en el formulario
-     ================================================================ -->
+<!-- JAVASCRIPT LOGIC -->
 <script>
-    // Crea una nueva fila vacía para agregar otra VLAN
+    // 1. LOGICA DE CAMBIO DE PUERTO (SSH=22, Telnet=23)
+    document.addEventListener("DOMContentLoaded", function() {
+        const protocolSelect = document.getElementById("protocolSelect");
+        const portInput = document.getElementById("portInput");
+
+        if (protocolSelect && portInput) {
+            protocolSelect.addEventListener("change", function() {
+                if (this.value === "ssh") {
+                    portInput.value = 22;
+                } else if (this.value === "telnet") {
+                    portInput.value = 23;
+                }
+                // Si el usuario quiere otro puerto, puede editarlo manualmente después del cambio automático.
+            });
+        }
+    });
+
+    // 2. LOGICA DE TABLA DE VLANS
     function addRow() {
         const tbody = document.getElementById("vlanRows");
         const tr = document.createElement("tr");
-
+        
+        tr.className = "hover:bg-gray-800/50 transition-colors fade-in";
         tr.innerHTML = `
-            <td>
-                <input type="number" name="vlan_id" min="1" max="4094">
+            <td class="px-4 py-3">
+                <input type="number" name="vlan_id" min="1" max="4094" placeholder="ID"
+                       class="w-full rounded px-2 py-1.5 bg-gray-800 border border-gray-600 focus:border-teal-500 text-center font-mono text-white focus:outline-none focus:ring-1 focus:ring-teal-500">
             </td>
-            <td>
-                <!-- Regla UI: máximo 20 caracteres en nombre de VLAN -->
-                <input type="text" name="vlan_name" placeholder="Ej: VLAN_VOZ" maxlength="20">
+            <td class="px-4 py-3">
+                <input type="text" name="vlan_name" placeholder="NOMBRE" maxlength="20"
+                       class="w-full rounded px-2 py-1.5 bg-gray-800 border border-gray-600 focus:border-teal-500 font-mono text-white focus:outline-none focus:ring-1 focus:ring-teal-500">
             </td>
-            <td>
-                <button type="button" class="btn btn-secondary" onclick="deleteRow(this)">Borrar</button>
+            <td class="px-4 py-3 text-center">
+                <button type="button" onclick="deleteRow(this)" class="p-1 rounded hover:bg-red-900/30 text-red-400 hover:text-red-200 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
             </td>
         `;
 
         tbody.appendChild(tr);
     }
 
-    // Elimina la fila donde está el botón "Borrar".
-    // Siempre deja al menos una fila para no vaciar la tabla por completo.
     function deleteRow(button) {
         const row = button.parentNode.parentNode;
         const tbody = document.getElementById("vlanRows");
@@ -455,5 +328,6 @@
         }
     }
 </script>
+
 </body>
 </html>
