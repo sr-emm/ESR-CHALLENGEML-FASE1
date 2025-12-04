@@ -1,0 +1,171 @@
+Building configuration...
+
+Current configuration : 3935 bytes
+!
+! Last configuration change at 09:08:57 GMT Thu Dec 4 2025 by admin
+!
+version 17.15
+service timestamps debug datetime msec
+service timestamps log datetime localtime
+service compress-config
+!
+hostname SW_AUTOMATE
+!
+boot-start-marker
+boot-end-marker
+!
+!
+logging discriminator EXCESS severity drops 6 msg-body drops EXCESSCOLL 
+logging buffered 50000
+logging console discriminator EXCESS
+no aaa new-model
+!
+!
+!
+clock timezone GMT -3 0
+no ip icmp rate-limit unreachable
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+ip audit notify log
+ip audit po max-events 100
+ip cef
+login on-success log
+no ipv6 cef
+!
+!
+!
+!
+!
+!
+!
+!
+crypto pki trustpoint TP-self-signed-2048001
+ enrollment selfsigned
+ subject-name cn=IOS-Self-Signed-Certificate-2048001
+ revocation-check none
+ rsakeypair TP-self-signed-2048001
+ hash sha512
+!
+!
+crypto pki certificate chain TP-self-signed-2048001
+ certificate self-signed 01
+  3082032A 30820212 A0030201 02020101 300D0609 2A864886 F70D0101 0D050030 
+  2E312C30 2A060355 04030C23 494F532D 53656C66 2D536967 6E65642D 43657274 
+  69666963 6174652D 32303438 30303130 1E170D32 35313230 34313035 3035365A 
+  170D3335 31323034 31303530 35365A30 2E312C30 2A060355 04030C23 494F532D 
+  53656C66 2D536967 6E65642D 43657274 69666963 6174652D 32303438 30303130 
+  82012230 0D06092A 864886F7 0D010101 05000382 010F0030 82010A02 82010100 
+  86FD8D2D 5B48A927 6F914FB9 39A531A1 766D6EB8 D37B5CB3 536C567A D4ADFD3D 
+  AF717027 337A6144 BF839F74 91DD81DF D97EC3BC BB02F8B2 39493142 1B604B18 
+  EA5834B0 729D4F27 07D24115 FF776618 68A443F8 C7A57EF6 9E88AB0C 6F6691BF 
+  FF67D14B 9856F4EB 32F58BE1 37FCB6CE 08AAFDA2 11C8D31A B87C89B4 8257DB0F 
+  6305BD3F 31D4371A DC64D8EF 8198EB27 0274105B C9E4561A 14D1022C 40920241 
+  3C250C41 8553C979 123820BC C798D386 49C310DF C8107807 A5A9ED26 11856908 
+  A5FD74B4 20E4EC2F 94D9E823 4D678FE3 2C009B8E 0CB02239 3CE3D28E 5AE0A204 
+  8ACF5584 40369F96 A7055041 CFAE1B55 04E9268A 8E4EBF03 1C6D5A8E 07370767 
+  02030100 01A35330 51301D06 03551D0E 04160414 11C10ADE 45067737 75691CB3 
+  14A968B1 1AB5F247 301F0603 551D2304 18301680 1411C10A DE450677 3775691C 
+  B314A968 B11AB5F2 47300F06 03551D13 0101FF04 05300301 01FF300D 06092A86 
+  4886F70D 01010D05 00038201 01003F97 16985D62 244F2F78 0D47F3BA CC2C1082 
+  88F5C683 1C68787C 87F9EA97 346AFDC6 8A32A207 FC503AD0 43938856 0F0F4F9C 
+  667E59F9 6DC43F99 8CB1E52D 6A7525A7 85DBD2CB 932EC7EE 094142E4 F6E81C64 
+  E223405D D31D9CA0 6CD859D6 2942034F 7D201805 E5FCA6AC C31FA788 9AB29E1D 
+  66BC0486 72D08C48 7B41C6EA 8608E9AE 99E26A40 49FC7E20 DE7D4C92 13B89713 
+  DFFFF7A0 9E154815 3EC4A2FB 4BBE0875 93362F0E F3CE93DA AC13023B B8734EED 
+  0FC0B7B9 BFC0D5B7 8BD20F71 35854F37 65BFF297 C93D90A6 83CBE2BE 13617C50 
+  8E89D7CA 7B96BFE2 C4CE196E 875916B5 0ED8B60D BD40FBEE 6F9F1652 7AF1112D 
+  FA6855B5 D1D9205A 79C451EC 407A
+  	quit
+!
+!
+memory free low-watermark processor 53379
+!
+!
+spanning-tree mode rapid-pvst
+spanning-tree extend system-id
+spanning-tree uplinkfast
+!
+username admin privilege 15 secret 9 $9$WiZcihCaK8brsU$XxxplEmrbtVAJa5aa2agUAYyfArZ2qjzV58QUk8OAp2
+!
+vlan internal allocation policy ascending
+!
+!
+!
+!
+!
+interface Ethernet0/0
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+!
+interface Ethernet0/1
+!
+interface Ethernet0/2
+!
+interface Ethernet0/3
+!
+interface Ethernet1/0
+!
+interface Ethernet1/1
+!
+interface Ethernet1/2
+!
+interface Ethernet1/3
+!
+interface Ethernet2/0
+!
+interface Ethernet2/1
+!
+interface Ethernet2/2
+!
+interface Ethernet2/3
+!
+interface Ethernet3/0
+!
+interface Ethernet3/1
+!
+interface Ethernet3/2
+!
+interface Ethernet3/3
+!
+interface Vlan1
+ ip address dhcp
+!
+ip forward-protocol nd
+!
+!
+ip tcp synwait-time 5
+ip http server
+ip http secure-server
+ip ssh bulk-mode 131072
+!
+no logging btrace
+!
+!
+!
+control-plane
+!
+!
+!
+line con 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+line aux 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+line vty 0 4
+ logging synchronous
+ login local
+ transport input telnet ssh
+!
+!
+end

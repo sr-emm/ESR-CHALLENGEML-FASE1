@@ -1,11 +1,12 @@
 """
 app.py
 ======
-Backend Refactorizado v4 (Final)
+Backend Refactorizado v7 (Strict Hostname)
 Mejoras:
-- Formato de fecha unificado (AAAA-MM-DD-HHMM-Host.txt) para TFTP y Descarga Web.
+- VALIDACIÓN: Solo letras, números, guiones (-) y guiones bajos (_). PUNTO ELIMINADO.
+- Formato de fecha unificado para backups.
 - Debug explícito de protocolo.
-- Manejo de escritura interactiva (write mem).
+- Manejo robusto de escritura interactiva.
 """
 
 from flask import Flask, render_template, request, session, make_response
@@ -108,7 +109,6 @@ def upload_tftp_smart(device_ip, username, password, port, protocol, tftp_ip, ho
     device = build_device(device_ip, username, password, port, protocol)
     hn = hostname if hostname else "switch-backup"
     
-    # Formato TFTP corregido
     timestamp = datetime.now().strftime("%Y-%m-%d-%H%M")
     filename = f"{timestamp}-{hn}.txt"
 
@@ -186,9 +186,23 @@ def index():
             names = request.form.getlist("vlan_name")
             vlans = [{"id": i, "name": n} for i, n in zip(ids, names) if i and i not in IGNORE_VLANS]
 
+        # --- VALIDACIÓN DE HOSTNAME (Sin puntos) ---
+        # Regex explicado: ^ = inicio, [] = caracteres permitidos, + = uno o más, $ = fin
+        # \w = letras, números y guion bajo (_)
+        # -  = guion medio
+        hostname_is_valid = True
+        if form_data["hostname"]:
+            if not re.match(r"^[\w-]+$", form_data["hostname"]):
+                hostname_is_valid = False
+
+        # --- DISPATCHER DE ACCIONES ---
+
         if not form_data["device_ip"]:
              error_msg = "Falta IP del dispositivo."
         
+        elif not hostname_is_valid and action in ("apply", "tftp_upload", "download_config"):
+            error_msg = "Error: Hostname inválido. Solo se permiten letras, números, guiones (-) y guiones bajos (_)."
+
         elif action == "fetch_all":
             ok, data, raw_out = fetch_current_data(
                 form_data["device_ip"], form_data["username"], password, port_int, clean_protocol
@@ -231,7 +245,6 @@ def index():
                 response = make_response(out)
                 response.headers["Content-Type"] = "text/plain"
                 
-                # --- AQUÍ ESTÁ LA CORRECCIÓN DE FORMATO PARA LA DESCARGA WEB ---
                 hn = form_data['hostname'] or 'switch'
                 timestamp = datetime.now().strftime("%Y-%m-%d-%H%M")
                 fn = f"{timestamp}-{hn}.txt"
